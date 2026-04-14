@@ -2,45 +2,33 @@
 {
     internal class Program
     {
-        static void PrintMessage()
-        {
-            for (int i = 0; i < 5; i++)
-                Console.WriteLine($"Hello Thread! {i}");
-        }
+        volatile static bool _stop = false;
 
-        static void PrintMessageWithState(object state)
+        static void ThreadMain()
         {
-            for (int i = 0; i < 5; i++)
-                Console.WriteLine($"Hello Thread! {i}");
-        }
+            Console.WriteLine("스레드 시작");
 
-        static void ThreadExample()
-        {
-            Thread t = new Thread(PrintMessage);
-            t.Name = "MyThread";
-            t.IsBackground = true;
-            t.Start();
-            t.Join();
-        }
+            while(_stop == false)
+            {
+                // 누군가가 stop 신호를 해주기를 기다린다.
+            }
 
-        static void ThreadPoolExample()
-        {
-            ThreadPool.QueueUserWorkItem(PrintMessageWithState);
-            Thread.Sleep(1000);
-        }
-
-        static void TaskExample()
-        {
-            Task t = new Task(PrintMessage);
-            t.Start();
-            t.Wait();
+            Console.WriteLine("스레드 종료");
         }
 
         static void Main(string[] args)
         {
-            ThreadExample();
-            //ThreadPoolExample();
-            //TaskExample();
+            Task t = new Task(ThreadMain);
+            t.Start();
+
+            Thread.Sleep(1000); // 메인스레드 1초동안 재움.
+
+            _stop = true;
+
+            Console.WriteLine("Stop 호출");
+            Console.WriteLine("종료 대기중");
+            t.Wait();
+            Console.WriteLine("종료 성공");
         }
     }
 }
