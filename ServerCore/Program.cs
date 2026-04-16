@@ -1,49 +1,35 @@
-﻿namespace ServerCore
+﻿using System.Reflection.Metadata;
+
+namespace ServerCore
 {
     internal class Program
     {
-        static volatile int x = 0;
-        static volatile int y = 0;
-        static volatile int result1 = 0;
-        static volatile int result2 = 0;
-
-        static void Thread_1()
+        static int _answer;
+        static bool _complete;
+        static void A()
         {
-            y = 1; // store y
-            Thread.MemoryBarrier();
-            result1 = x; // load x
+            _answer = 123;
+            Thread.MemoryBarrier(); // store _answer before _complete
+            _complete = true;
+            Thread.MemoryBarrier(); // flush _complete to memory
         }
 
-        static void Thread_2()
+        static void B()
         {
-            x = 1; // store x
-            Thread.MemoryBarrier();
-            result2 = y; // load y
+            Thread.MemoryBarrier(); // read latest _complete from memory
+            if(_complete)
+            {
+                Thread.MemoryBarrier(); // read latest _answer from memory
+                System.Console.WriteLine(_answer);
+            }
         }
-
         static void Main(string[] args)
         {
-            int count = 0;
-            while(true)
-            {
-                count++;
-
-                x = y = result1 = result2 = 0;
-
-                Task t1 = new Task(Thread_1);
-                Task t2 = new Task(Thread_2);
-
-                t1.Start();
-                t2.Start();
-
-                Task.WaitAll(t1, t2);
-
-                if (result1 == 0 && result2 == 0)
-                {
-                    break;
-                }
-            }
-            System.Console.WriteLine($"count : {count}");
+            Task t1 = new Task(A);
+            Task t2 = new Task(B);
+            t1.Start();
+            t2.Start();
+            Task.WaitAll(t1, t2);
         }
     }
 }
